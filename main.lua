@@ -5,6 +5,10 @@ local interp = require "interpreter"
 
 if arg[1] then
   local file = io.open(arg[1], "r")
+  if not file then
+    print("Error: file does not exist")
+    os.exit(1)
+  end
   local code = file:read("*all")
   file:close()
 
