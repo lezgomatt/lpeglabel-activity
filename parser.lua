@@ -24,26 +24,31 @@ local open_p      = lpeg.S("(")
 local close_p     = lpeg.S(")")
 
 local space = lpeg.S(" \t\n")^0
-num         = space * num
-var         = space * var
-equals      = space * equals
-plus_minus  = space * plus_minus
-star_slash  = space * star_slash
-open_p      = space * open_p
-close_p     = space * close_p
+num         = space * lpeg.C(num)
+var         = space * lpeg.C(var)
+equals      = space * lpeg.C(equals)
+plus_minus  = space * lpeg.C(plus_minus)
+star_slash  = space * lpeg.C(star_slash)
+open_p      = space * lpeg.C(open_p)
+close_p     = space * lpeg.C(close_p)
+
 
 local Cmd     = lpeg.V("Cmd")
 local Exp     = lpeg.V("Exp")
 local Term    = lpeg.V("Term")
 local Factor  = lpeg.V("Factor")
 
+require "ast"
+
 local Grammar = lpeg.P {
   "Program",
-  Program  = (Cmd + Exp)^0;
-  Cmd      = var * equals * Exp;
-  Exp      = Term * (plus_minus * Term)^0;
-  Term     = Factor * (star_slash * Factor)^0;
-  Factor   = num + var + open_p * Exp * close_p;
+  Program  = lpeg.Ct((Cmd + Exp)^0) / prog_node;
+  Cmd      = var * equals * Exp / cmd_node;
+  Exp      = lpeg.Ct(Term * (plus_minus * Term)^0) / op_node;
+  Term     = lpeg.Ct(Factor * (star_slash * Factor)^0) / op_node;
+  Factor   = num / num_node + 
+             var / var_node + 
+             open_p * Exp * close_p / get_exp;
 }
 
 Grammar = Grammar * space * -lpeg.P(1)
