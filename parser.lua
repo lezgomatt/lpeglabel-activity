@@ -38,17 +38,17 @@ local Exp     = lpeg.V("Exp")
 local Term    = lpeg.V("Term")
 local Factor  = lpeg.V("Factor")
 
-require "ast"
+local ast = require "ast"
 
 local Grammar = lpeg.P {
   "Program",
-  Program  = lpeg.Ct((Cmd + Exp)^0) / prog_node;
-  Cmd      = var * equals * Exp / cmd_node;
-  Exp      = lpeg.Ct(Term * (plus_minus * Term)^0) / op_node;
-  Term     = lpeg.Ct(Factor * (star_slash * Factor)^0) / op_node;
-  Factor   = num / num_node + 
-             var / var_node + 
-             open_p * Exp * close_p / get_exp;
+  Program  = lpeg.Ct((Cmd + Exp)^0) / ast.prog_node;
+  Cmd      = var * equals * Exp / ast.cmd_node;
+  Exp      = lpeg.Ct(Term * (plus_minus * Term)^0) / ast.op_node;
+  Term     = lpeg.Ct(Factor * (star_slash * Factor)^0) / ast.op_node;
+  Factor   = num / ast.num_node + 
+             var / ast.var_node + 
+             open_p * Exp * close_p / ast.get_exp;
 }
 
 Grammar = Grammar * space * -lpeg.P(1)

@@ -1,11 +1,13 @@
-function prog_node(lines)
+local ast = {}
+
+function ast.prog_node(lines)
   return {
     type   = "prog";
     lines  = lines;
   }
 end
 
-function cmd_node(var, eq, exp)
+function ast.cmd_node(var, eq, exp)
   return {
     type  = "cmd";
     var   = var;
@@ -13,7 +15,7 @@ function cmd_node(var, eq, exp)
   }
 end
 
-function op_node(ops)
+function ast.op_node(ops)
   local node = ops[1]
   for i = 2, #ops, 2 do
     node = {
@@ -26,28 +28,28 @@ function op_node(ops)
   return node
 end
 
-function num_node(num)
+function ast.num_node(num)
   return {
     type  = "num";
     val   = tonumber(num);
   }  
 end
 
-function var_node(var)
+function ast.var_node(var)
   return {
     type  = "var";
     name  = var;
   }  
 end
 
-function get_exp(open, exp, close)
+function ast.get_exp(open, exp, close)
   return exp
 end
 
 
 -- table pretty printing for easy AST node inspection
 -- taken from https://gist.github.com/ripter/4270799
-function tprint (tbl, indent)
+function ast.tprint (tbl, indent)
   if not indent then indent = 0 end
   for k, v in pairs(tbl) do
     formatting = string.rep("  ", indent) .. k .. ": "
@@ -61,3 +63,5 @@ function tprint (tbl, indent)
     end
   end
 end
+
+return ast
