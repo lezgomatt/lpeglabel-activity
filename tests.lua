@@ -1,0 +1,17 @@
+local parser = require "parser"
+
+assert(parser.parse "")
+assert(parser.parse "0")
+assert(parser.parse "-1")
+assert(parser.parse "1234567890")
+assert(parser.parse "1 + 1")
+assert(parser.parse "2 * 2")
+assert(parser.parse "1 + 2 * 2")
+assert(parser.parse "(1 + 2) * 2")
+assert(parser.parse "1 + (2 * 2)")
+assert(parser.parse "x = 1 + 1  x")
+assert(parser.parse "x = 1 + 1  x = 2*x + 1")
+assert(parser.parse "1 +" == nil)
+assert(parser.parse "* 2" == nil)
+assert(parser.parse "(1 + 1" == nil)
+assert(parser.parse "1 + 1)" == nil)

@@ -53,19 +53,8 @@ local Grammar = lpeg.P {
 
 Grammar = Grammar * space * -lpeg.P(1)
 
-
-assert(lpeg.match(Grammar, ""))
-assert(lpeg.match(Grammar, "0"))
-assert(lpeg.match(Grammar, "-1"))
-assert(lpeg.match(Grammar, "1234567890"))
-assert(lpeg.match(Grammar, "1 + 1"))
-assert(lpeg.match(Grammar, "2 * 2"))
-assert(lpeg.match(Grammar, "1 + 2 * 2"))
-assert(lpeg.match(Grammar, "(1 + 2) * 2"))
-assert(lpeg.match(Grammar, "1 + (2 * 2)"))
-assert(lpeg.match(Grammar, "x = 1 + 1  x"))
-assert(lpeg.match(Grammar, "x = 1 + 1  x = 2*x + 1"))
-assert(lpeg.match(Grammar, "1 +") == nil)
-assert(lpeg.match(Grammar, "* 2") == nil)
-assert(lpeg.match(Grammar, "(1 + 1") == nil)
-assert(lpeg.match(Grammar, "1 + 1)") == nil)
+local parser = {}
+function parser.parse(string)
+  return lpeg.match(Grammar, string)
+end
+return parser
