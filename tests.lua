@@ -20,7 +20,7 @@ assert(parser.parse "1 + 1)" == nil)
 local function run(string)
   ast = parser.parse(string)
   if not ast then return "ERROR" end
-  return interp.eval(ast)
+  return interp.eval(ast, nil, true)
 end
 
 assert(run "" == nil)
@@ -36,3 +36,5 @@ assert(run "x = 1 + 1  x = 2*x + 1  x" == 5)
 assert(run "x = 1 + 1  x  x = 8-13  x" == -5)
 assert(run "x + 1  x  x = 8-13  x" == nil)
 assert(run "x = 7  y = 28  y/x" == 4)
+
+print("All tests passed!")

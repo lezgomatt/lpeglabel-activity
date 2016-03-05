@@ -4,36 +4,43 @@ local interpreter = {}
 
 local function new_env(init_tbl)
   env = {}
+
   if init_tbl then
     for var, val in pairs(init_tbl) do
       env[var] = val
     end
   end
+
   return env
 end
 
-local function eval(node, env)
+local function eval(node, env, silent)
   if not env then env = new_env() end
 
   if node.type == "prog" then
     local result, err
+
     for i, node in ipairs(node.lines) do
       result, err = eval(node, env)
       if err then
         err = "Error: " .. err .. " in line " .. i
-        print(err)
+        if not silent then
+          print(err)
+        end
         return nil, err 
       end
 
-      if result then
+      if not silent and result then
         print(result)
       end
     end
+
     return result
 
   elseif node.type == "cmd" then
     local val, err = eval(node.val, env)
     if err then return nil, err end
+
     env[node.var] = val
     return nil
 
