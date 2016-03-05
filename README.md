@@ -15,7 +15,7 @@ to run the interpreter on that file instead.
     Factor  <- num | var | (Exp)
 
 where num is an integer, and var is a single letter variable.
-Whitespace is not significant in this language.
+Whitespace is *not* significant in this language.
 
 ## Table of Syntax Errors
 The following table lists the syntax errors implemented:
@@ -47,7 +47,7 @@ The following table lists the syntax errors implemented:
     OPEN_P      <- space {'('}
     CLOSE_P     <- space {')'}
   
-    space <- %s*
+    space  <- %s*
 
     Err_rhs_exp     <- Compute_pos %{err_rhs_exp}
     Err_op_exp      <- Compute_pos %{err_op_exp}
