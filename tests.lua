@@ -18,8 +18,8 @@ assert(parser.parse "(1 + 1" == nil)
 assert(parser.parse "1 + 1)" == nil)
 
 local function run(string)
-  ast = parser.parse(string)
-  if not ast then return "ERROR" end
+  local ast, err = parser.parse(string)
+  if err then return "SYNTAX ERROR" end
   return interp.eval(ast, nil, true)
 end
 
@@ -36,5 +36,33 @@ assert(run "x = 1 + 1  x = 2*x + 1  x" == 5)
 assert(run "x = 1 + 1  x  x = 8-13  x" == -5)
 assert(run "x + 1  x  x = 8-13  x" == nil)
 assert(run "x = 7  y = 28  y/x" == 4)
+
+local result, err
+result, err = parser.parse "-"
+assert(err.code == 1)
+result, err = parser.parse "-0"
+assert(err.code == 1)
+result, err = parser.parse "-x"
+assert(err.code == 1)
+result, err = parser.parse "1 -"
+assert(err.code == 2)
+result, err = parser.parse "2 /"
+assert(err.code == 2)
+result, err = parser.parse "()"
+assert(err.code == 2)
+result, err = parser.parse "(3"
+assert(err.code == 3)
+result, err = parser.parse "(4+"
+assert(err.code == 2)
+result, err = parser.parse "(5*)"
+assert(err.code == 2)
+result, err = parser.parse "(x*y"
+assert(err.code == 3)
+result, err = parser.parse "x)"
+assert(err.code == 0)
+result, err = parser.parse "+2"
+assert(err.code == 0)
+result, err = parser.parse "x ="
+assert(err.code == 2)
 
 print("All tests passed!")

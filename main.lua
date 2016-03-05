@@ -12,9 +12,9 @@ if arg[1] then
   local code = file:read("*all")
   file:close()
 
-  local ast = parser.parse(code)
-  if not ast then
-    print("Error: syntax")
+  local ast, err = parser.parse(code)
+  if err then
+    print("Error: syntax - " .. err.msg)
   else
     interp.eval(ast)
   end
@@ -29,9 +29,9 @@ else
     local line = io.read()
     if line == "quit" then break end
 
-    local ast = parser.parse(line)
-    if not ast then
-      print("Error: syntax")
+    local ast, err = parser.parse(line)
+    if err then
+      print("Error: syntax - " .. err.msg)
     else
       interp.eval(ast, env)
     end
