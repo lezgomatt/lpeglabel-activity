@@ -30,31 +30,24 @@ The following table lists the syntax errors implemented:
 | 6          | Unknown or unexpected character encountered | `1/2)`   |
 
 ## Actual Grammar
-    Program  <- ({| (Cmd / Exp)* |} space (!. / Err_unexpected))
+This is the actual grammar implemented in the code, with the captures, 
+building of AST nodes, and computing of the error position omitted.
+
+    Program  <- (Cmd / Exp)* space (!. / Err_unexpected)
     Cmd      <- (var EQUALS (Exp / Err_rhs_exp))
-    Exp      <- {| Term (PLUS_MINUS (Term / Err_op_exp))* |}
-    Term     <- {| Factor (STAR_SLASH (Factor / Err_op_exp))* |}
+    Exp      <- Term (PLUS_MINUS (Term / Err_op_exp))*
+    Term     <- Factor (STAR_SLASH (Factor / Err_op_exp))*
     Factor   <- num
               / var
-              / (OPEN_P (Exp / Err_p_exp) (CLOSE_P / Err_close_p))
+              / OPEN_P (Exp / Err_p_exp) (CLOSE_P / Err_close_p)
 
-    var  <- space {[A-Za-z]}
-    num  <- space {'0' / [1-9][0-9]* / '-' ([1-9][0-9]* / Err_non_zero)}
+    var  <- space [A-Za-z]
+    num  <- space ('0' / [1-9][0-9]* / '-' ([1-9][0-9]* / Err_non_zero))
   
-    EQUALS      <- space {'='}
-    PLUS_MINUS  <- space {'+' / '-'}
-    STAR_SLASH  <- space {'*' / '/'}
-    OPEN_P      <- space {'('}
-    CLOSE_P     <- space {')'}
+    EQUALS      <- space '='
+    PLUS_MINUS  <- space ('+' / '-')
+    STAR_SLASH  <- space ('*' / '/')
+    OPEN_P      <- space '('
+    CLOSE_P     <- space ')'
   
     space  <- %s*
-
-    Err_rhs_exp     <- Compute_pos %{err_rhs_exp}
-    Err_op_exp      <- Compute_pos %{err_op_exp}
-    Err_p_exp       <- Compute_pos %{err_p_exp}
-    Err_close_p     <- Compute_pos %{err_close_p}
-    Err_non_zero    <- Compute_pos %{err_non_zero}
-    Err_unexpected  <- Compute_pos %{err_unexpected}
-
-    Compute_pos  <- '' => compute_pos
-
