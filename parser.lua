@@ -1,71 +1,139 @@
-local lpeg = require "lpeglabel"
+local re = require 'relabel'
+local ast = require 'ast'
 
 -- Original Grammar:
--- Program  -> (Cmd | Exp)*
--- Cmd      -> var "=" Exp
--- Exp      -> Exp "+" Term | Exp "-" Term | Term
--- Term     -> Term "*" Factor | Term "/" Factor | Factor
--- Factor   -> num | var | (Exp)
+-- Program  <- (Cmd | Exp)*
+-- Cmd      <- var "=" Exp
+-- Exp      <- Exp "+" Term | Exp "-" Term | Term
+-- Term     <- Term "*" Factor | Term "/" Factor | Factor
+-- Factor   <- num | var | (Exp)
 
 -- Modified Grammar:
--- Program  -> (Cmd / Exp)*
--- Cmd      -> var "=" Exp
--- Exp      -> Term (("+" / "-") / Term)*
--- Term     -> Factor (("*" / "/") Factor)*
--- Factor   -> num / var / "(" Exp ")"
-
-local num         = lpeg.P("0") +
-                    lpeg.R("19") * lpeg.R("09")^0 +
-                    lpeg.S("-") * (lpeg.R("19") + lpeg.T(1)) * lpeg.R("09")^0
-local var         = lpeg.R("az")
-local equals      = lpeg.S("=")
-local plus_minus  = lpeg.S("+-")
-local star_slash  = lpeg.S("*/")
-local open_p      = lpeg.S("(")
-local close_p     = lpeg.S(")")
-
-local space = lpeg.S(" \t\n")^0
-num         = space * lpeg.C(num)
-var         = space * lpeg.C(var)
-equals      = space * lpeg.C(equals)
-plus_minus  = space * lpeg.C(plus_minus)
-star_slash  = space * lpeg.C(star_slash)
-open_p      = space * lpeg.C(open_p)
-close_p     = space * lpeg.C(close_p)
+-- Program  <- (Cmd / Exp)*
+-- Cmd      <- var "=" Exp
+-- Exp      <- Term (("+" / "-") / Term)*
+-- Term     <- Factor (("*" / "/") Factor)*
+-- Factor   <- num / var / "(" Exp ")"
 
 
-local Cmd     = lpeg.V("Cmd")
-local Exp     = lpeg.V("Exp")
-local Term    = lpeg.V("Term")
-local Factor  = lpeg.V("Factor")
+-- `err:rule` is a shorthand for `(rule / Err_err)`
+local rules = [[
+  Program  <- ({| (Cmd / Exp)* |} space (!. / Err_unexpected))  -> prog_node
+  Cmd      <- (var EQUALS rhs_exp:Exp)                  -> cmd_node
+  Exp      <- {| Term (PLUS_MINUS op_exp:Term)* |}      -> op_node
+  Term     <- {| Factor (STAR_SLASH op_exp:Factor)* |}  -> op_node
+  Factor   <- num                                       -> num_node
+            / var                                       -> var_node
+            / (OPEN_P p_exp:Exp close_p:CLOSE_P)        -> get_exp
+]]
 
-local ast = require "ast"
+local tokens = [[
+  var  <- space {[A-Za-z]}
+  num  <- space {'0' / [1-9][0-9]* / '-' ([1-9][0-9]* / Err_non_zero)}
+  
+  EQUALS      <- space {'='}
+  PLUS_MINUS  <- space {'+' / '-'}
+  STAR_SLASH  <- space {'*' / '/'}
+  OPEN_P      <- space {'('}
+  CLOSE_P     <- space {')'}
+  
+  space <- %s*
+]]
 
-local Grammar = lpeg.P {
-  "Program",
-  Program  = lpeg.Ct((Cmd + Exp)^0) / ast.prog_node;
-  Cmd      = var * equals * (Exp + lpeg.T(2)) / ast.cmd_node;
-  Exp      = lpeg.Ct(Term * (plus_minus * (Term + lpeg.T(2)))^0) / ast.op_node;
-  Term     = lpeg.Ct(Factor * (star_slash * (Factor + lpeg.T(2)))^0) / ast.op_node;
-  Factor   = num / ast.num_node + 
-             var / ast.var_node + 
-             open_p * (Exp + lpeg.T(2)) * (close_p + lpeg.T(3)) / ast.get_exp;
-}
+local err_arr = {}
+local err_msg = {}
+local function add_error(err, msg)
+  table.insert(err_arr, err)
+  err_msg[#err_arr] = msg
+end
 
-Grammar = Grammar * space * -lpeg.P(1)
+add_error('rhs_exp',    "expected expression after '='")
+add_error('op_exp',     "expected expression after operator")
+add_error('p_exp',      "expected expression after '('")
+add_error('close_p',    "expected ')' after expression")
+add_error('non_zero',   "expected non-zero digit after '-'")
+add_error('unexpected', "unknown or unexpected character")
+err_msg[0] = "syntax error"
 
-local err_msg = {
-    "expected non-zero digit after negative sign",
-    "expected expression after operator or parenthesis",
-    "expected closing parenthesis after expression",
-    [0] = "unexpected character encountered";
-}
+local errors = "\n"
+local label_tbl = {}
+for i, err in ipairs(err_arr) do
+  errors = errors .. "Err_" .. err .. " <- Compute_pos %{err_" .. err .. "}\n"
+  label_tbl["err_" .. err] = i
+end
+errors = errors .. "Compute_pos <- '' => compute_pos\n"
+re.setlabels(label_tbl)
+
+local line, col
+function compute_pos(string, i)
+  line, col = 1, 1
+  local function next_line()
+    line = line + 1
+    col = 1
+    return true
+  end
+  local function next_col()
+    col = col + 1
+    return true
+  end
+  
+  local patt = re.compile([[
+    S <- (%nl -> next_line / . -> next_col)*
+  ]], { 
+    next_line = next_line; 
+    next_col = next_col;
+  })
+  patt:match(string:sub(1, i))
+  
+  return true
+end
+
+-- transform `err:rule` shorthand into `(rule / Err_err)`
+local function transform_err(string)
+  return re.gsub(rules, [[
+    S <- {ident} ':' {ident}
+    ident <- [A-Za-z][A-Za-z0-9_]*
+  ]], function(err, rule)
+    return '(' .. rule .. ' / Err_' .. err .. ')'
+  end)
+end
+
+rules = transform_err(rules)
+
+local grammar = re.compile(rules .. tokens .. errors, {
+  prog_node  = ast.prog_node;
+  cmd_node   = ast.cmd_node;
+  op_node    = ast.op_node;
+  num_node   = ast.num_node;
+  var_node   = ast.var_node;
+  get_exp    = ast.get_exp;
+  
+  compute_pos = compute_pos;
+})
 
 local parser = {}
 
 function parser.parse(string)
-  local result, err = lpeg.match(Grammar, string)
-  if err then return nil, { code = err; msg = err_msg[err] } end
+  local result, err = grammar:match(string)
+  if err then
+    if err == 6  then -- unknown / unexpected char 
+      local char
+      line_num = 0
+      for text_line in string:gmatch("[^%nl]*") do
+        line_num = line_num + 1
+        if line_num == line then
+          char = text_line:sub(col-1, col-1)
+          break
+        end
+      end
+      return nil, { 
+        code = err; 
+        msg = err_msg[err] .. " '" .. char .. "'"; 
+        line = line; col = col-1;
+      }
+    end
+    return nil, { code = err; msg = err_msg[err]; line = line; col = col; }
+  end
   return result
 end
 

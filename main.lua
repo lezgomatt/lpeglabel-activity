@@ -14,7 +14,7 @@ if arg[1] then
 
   local ast, err = parser.parse(code)
   if err then
-    print("Error: syntax - " .. err.msg)
+    print("Error: syntax - " .. err.msg .. " in line " .. err.line .. ", col " .. err.col)
   else
     interp.eval(ast)
   end
@@ -31,7 +31,7 @@ else
 
     local ast, err = parser.parse(line)
     if err then
-      print("Error: syntax - " .. err.msg)
+      print("Error: syntax - " .. err.msg ..  " in line " .. err.line .. ", col " .. err.col)
     else
       interp.eval(ast, env)
     end
