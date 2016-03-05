@@ -14,7 +14,7 @@ to run the interpreter on that file instead.
     Term    <- Term * Factor | Term / Factor | Factor
     Factor  <- num | var | (Exp)
 
-where num is an integer, and var is a single letter variable.
+where `num` is an integer, and `var` is a single letter variable.
 Whitespace is *not* significant in this language.
 
 ## Table of Syntax Errors
