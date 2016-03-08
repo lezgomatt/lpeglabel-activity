@@ -53,35 +53,28 @@ assert(run "x = -3  (-(x+2))" == 1)
 assert(run  "-1--4" == 3)
 assert(run  "----4" == 4)
 
--- 1 "expected expression after '='"
--- 2 "expected expression after operator"
--- 3 "expected expression after '('"
--- 4 "expected ')' after expression"
--- 5 "expected non-zero digit after '-'"
--- 6 "unknown or unexpected character"
-
 local result, err
 result, err = parser.parse "-"
-assert(err.code == 5)
+assert(err.code == parser.err_codes.err_neg_exp)
 result, err = parser.parse "1 -"
-assert(err.code == 2)
+assert(err.code == parser.err_codes.err_op_exp)
 result, err = parser.parse "2 /"
-assert(err.code == 2)
+assert(err.code == parser.err_codes.err_op_exp)
 result, err = parser.parse "()"
-assert(err.code == 3)
+assert(err.code == parser.err_codes.err_p_exp)
 result, err = parser.parse "(3"
-assert(err.code == 4)
+assert(err.code == parser.err_codes.err_close_p)
 result, err = parser.parse "(4+"
-assert(err.code == 2)
+assert(err.code == parser.err_codes.err_op_exp)
 result, err = parser.parse "(5*)"
-assert(err.code == 2)
+assert(err.code == parser.err_codes.err_op_exp)
 result, err = parser.parse "(x*y"
-assert(err.code == 4)
+assert(err.code == parser.err_codes.err_close_p)
 result, err = parser.parse "x)"
-assert(err.code == 6)
+assert(err.code == parser.err_codes.err_unexpected)
 result, err = parser.parse "+2"
-assert(err.code == 6)
+assert(err.code == parser.err_codes.err_unexpected)
 result, err = parser.parse "x ="
-assert(err.code == 1)
+assert(err.code == parser.err_codes.err_rhs_exp)
 
 print("All tests passed!")

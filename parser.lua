@@ -25,7 +25,7 @@ local rules = [[
   Factor   <- num                                               -> num_node
             / var                                               -> var_node
             / (OPEN_P p_exp:Exp close_p:CLOSE_P)                -> get_exp
-            / (MINUS non_zero:Factor)                           -> neg_node
+            / (MINUS neg_exp:Factor)                           -> neg_node
 ]]
 
 local tokens = [[
@@ -54,7 +54,7 @@ add_error('rhs_exp',    "expected expression after '='")
 add_error('op_exp',     "expected expression after operator")
 add_error('p_exp',      "expected expression after '('")
 add_error('close_p',    "expected ')' after expression")
-add_error('non_zero',   "expected expression after '-'")
+add_error('neg_exp',    "expected expression after '-'")
 add_error('unexpected', "unknown or unexpected character")
 err_msg[0] = "syntax error"
 
@@ -116,11 +116,12 @@ local grammar = re.compile(rules .. tokens .. errors, {
 })
 
 local parser = {}
+parser.err_codes = label_tbl;
 
 function parser.parse(string)
   local result, err = grammar:match(string)
   if err then
-    if err == 6  then -- unknown / unexpected char 
+    if err == parser.err_codes.err_unexpected  then
       local char
       line_num = 0
       for text_line in string:gmatch("[^%nl]*") do
