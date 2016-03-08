@@ -17,10 +17,16 @@ assert(is_valid "(1 + 2) * 2")
 assert(is_valid "1 + (2 * 2)")
 assert(is_valid "x = 1 + 1  x")
 assert(is_valid "x = 1 + 1  x = 2*x + 1")
+assert(is_valid "x = 3  (-x)")
+assert(is_valid "x = 3  (-x + 1)")
+assert(is_valid "x = -3  (-(x*2))")
+assert(is_valid "-1--4")
+assert(is_valid "----4")
 assert(not is_valid "1 +")
 assert(not is_valid "* 2")
 assert(not is_valid "(1 + 1")
 assert(not is_valid "1 + 1)")
+assert(not is_valid "-")
 
 local function run(string)
   local ast, err = parser.parse(string)
@@ -41,6 +47,11 @@ assert(run "x = 1 + 1  x = 2*x + 1  x" == 5)
 assert(run "x = 1 + 1  x  x = 8-13  x" == -5)
 assert(run "x + 1  x  x = 8-13  x" == nil)
 assert(run "x = 7  y = 28  y/x" == 4)
+assert(run "x = 3  (-x)" == -3)
+assert(run "x = 3  (-x + 1)" == -2)
+assert(run "x = -3  (-(x+2))" == 1)
+assert(run  "-1--4" == 3)
+assert(run  "----4" == 4)
 
 -- 1 "expected expression after '='"
 -- 2 "expected expression after operator"
@@ -51,10 +62,6 @@ assert(run "x = 7  y = 28  y/x" == 4)
 
 local result, err
 result, err = parser.parse "-"
-assert(err.code == 5)
-result, err = parser.parse "-0"
-assert(err.code == 5)
-result, err = parser.parse "-x"
 assert(err.code == 5)
 result, err = parser.parse "1 -"
 assert(err.code == 2)

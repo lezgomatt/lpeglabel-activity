@@ -19,23 +19,26 @@ local ast = require 'ast'
 -- `err:rule` is a shorthand for `(rule / Err_err)`
 local rules = [[
   Program  <- ({| (Cmd / Exp)* |} space (!. / Err_unexpected))  -> prog_node
-  Cmd      <- (var EQUALS rhs_exp:Exp)                  -> cmd_node
-  Exp      <- {| Term (PLUS_MINUS op_exp:Term)* |}      -> op_node
-  Term     <- {| Factor (STAR_SLASH op_exp:Factor)* |}  -> op_node
-  Factor   <- num                                       -> num_node
-            / var                                       -> var_node
-            / (OPEN_P p_exp:Exp close_p:CLOSE_P)        -> get_exp
+  Cmd      <- (var EQUALS rhs_exp:Exp)                          -> cmd_node
+  Exp      <- {| Term ((PLUS / MINUS) op_exp:Term)* |}          -> op_node
+  Term     <- {| Factor ((STAR / SLASH) op_exp:Factor)* |}      -> op_node
+  Factor   <- num                                               -> num_node
+            / var                                               -> var_node
+            / (OPEN_P p_exp:Exp close_p:CLOSE_P)                -> get_exp
+            / (MINUS non_zero:Factor)                           -> neg_node
 ]]
 
 local tokens = [[
   var  <- space {[A-Za-z]}
-  num  <- space {'0' / [1-9][0-9]* / '-' ([1-9][0-9]* / Err_non_zero)}
+  num  <- space {'0' / [1-9][0-9]*}
   
-  EQUALS      <- space {'='}
-  PLUS_MINUS  <- space {'+' / '-'}
-  STAR_SLASH  <- space {'*' / '/'}
-  OPEN_P      <- space {'('}
-  CLOSE_P     <- space {')'}
+  EQUALS   <- space {'='}
+  PLUS     <- space {'+'}
+  MINUS    <- space {'-'}
+  STAR     <- space {'*'}
+  SLASH    <- space {'/'}
+  OPEN_P   <- space {'('}
+  CLOSE_P  <- space {')'}
   
   space <- %s*
 ]]
@@ -51,7 +54,7 @@ add_error('rhs_exp',    "expected expression after '='")
 add_error('op_exp',     "expected expression after operator")
 add_error('p_exp',      "expected expression after '('")
 add_error('close_p',    "expected ')' after expression")
-add_error('non_zero',   "expected non-zero digit after '-'")
+add_error('non_zero',   "expected expression after '-'")
 add_error('unexpected', "unknown or unexpected character")
 err_msg[0] = "syntax error"
 
@@ -107,6 +110,7 @@ local grammar = re.compile(rules .. tokens .. errors, {
   num_node   = ast.num_node;
   var_node   = ast.var_node;
   get_exp    = ast.get_exp;
+  neg_node   = ast.neg_node;
   
   compute_pos = compute_pos;
 })

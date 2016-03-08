@@ -46,6 +46,10 @@ function ast.get_exp(open, exp, close)
   return exp
 end
 
+function ast.neg_node(minus, exp)
+  return ast.op_node({ast.num_node(0), "-", exp})
+end
+
 
 -- table pretty printing for easy AST node inspection
 -- taken from https://gist.github.com/ripter/4270799
