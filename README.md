@@ -20,14 +20,14 @@ Whitespace is *not* significant in this language.
 ## Table of Syntax Errors
 The following table lists the syntax errors implemented:
 
-| Error Code | Error                                       | Example  |
-| ---------- | ------------------------------------------- | -------- |
-| 1          | Missing expression after '=' in a command   | `x =`    |
-| 2          | Missing expression after an operator        | `1 +`    |
-| 3          | Missing expression after '('                | `()`     |
-| 4          | Missing ')'                                 | `(2 * 2` |
-| 5          | Missing non-zero digit after '-'            | `-x`     |
-| 6          | Unknown or unexpected character encountered | `1/2)`   |
+| Error Label    | Error                                       | Example  |
+| -------------- | ------------------------------------------- | -------- |
+| err_rhs_exp    | Missing expression after '=' in a command   | `x =`    |
+| err_op_exp     | Missing expression after an operator        | `1 +`    |
+| err_p_exp      | Missing expression after '('                | `()`     |
+| err_close_p    | Missing ')'                                 | `(2 * 2` |
+| err_neg_exp    | Missing expression after '-'                | `-`      |
+| err_unexpected | Unknown or unexpected character encountered | `1/2)`   |
 
 ## Actual Grammar
 This is the actual grammar implemented in the code, with the captures, 
@@ -35,19 +35,22 @@ building of AST nodes, and computing of the error position omitted.
 
     Program  <- (Cmd / Exp)* space (!. / Err_unexpected)
     Cmd      <- (var EQUALS (Exp / Err_rhs_exp))
-    Exp      <- Term (PLUS_MINUS (Term / Err_op_exp))*
-    Term     <- Factor (STAR_SLASH (Factor / Err_op_exp))*
+    Exp      <- Term ((PLUS / MINUS) (Term / Err_op_exp))*
+    Term     <- Factor ((STAR / SLASH) (Factor / Err_op_exp))*
     Factor   <- num
               / var
               / OPEN_P (Exp / Err_p_exp) (CLOSE_P / Err_close_p)
+              / MINUS (Factor / Err_neg_exp)
 
     var  <- space [A-Za-z]
-    num  <- space ('0' / [1-9][0-9]* / '-' ([1-9][0-9]* / Err_non_zero))
+    num  <- space ('0' / [1-9][0-9]*)
   
-    EQUALS      <- space '='
-    PLUS_MINUS  <- space ('+' / '-')
-    STAR_SLASH  <- space ('*' / '/')
-    OPEN_P      <- space '('
-    CLOSE_P     <- space ')'
+    EQUALS   <- space '='
+    PLUS     <- space '+'
+    MINUS    <- space '-'
+    STAR     <- space '*'
+    SLASH    <- space '/'
+    OPEN_P   <- space '('
+    CLOSE_P  <- space ')'
   
     space  <- %s*
