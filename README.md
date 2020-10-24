@@ -1,6 +1,9 @@
 # LPegLabel Activity
 A simple interpreter to try out LPegLabel in preparation for LabLua's
-GSoC 2016 project for improving the quality of error messages in PEG parsers.
+GSoC 2016 project for improving the quality of error messages in PEG parsers
+[(details)](https://summerofcode.withgoogle.com/archive/2016/projects/4549674694344704/).
+You can read about my GSoC 2016 experience
+[here](https://github.com/lezgomatt/lpeglabel-gsoc-2016/blob/master/README.md).
 
 ## Usage
 Simply run `main.lua` to test out the intearctive REPL (make sure you have
